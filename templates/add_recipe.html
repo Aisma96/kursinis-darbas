@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Added{% endblock %}
+
+{% block content %}
+<script>
+    function addIngredient() {
+        var ingredientsDiv = document.getElementById('ingredientsDiv');
+        var newIngredientDiv = document.createElement('div');
+        newIngredientDiv.innerHTML = `
+            <input type="text" name="ingredients" placeholder="Ingredient">
+            <input type="text" name="quantities" placeholder="Quantity">
+        `;
+        ingredientsDiv.appendChild(newIngredientDiv);
+    }
+</script>
+<h1>Add Recipe</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.name.label }} {{ form.name }}
+        {% for error in form.name.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div id="ingredientsDiv">
+        <div>
+            {{ form.ingredients.label }} {{ form.ingredients }}
+            {{ form.quantities.label }} {{ form.quantities }}
+        </div>
+    </div>
+    <button type="button" onclick="addIngredient()">Add Ingredient</button>
+    <div>
+        {{ form.description.label }} {{ form.description }}
+        {% for error in form.description.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div>
+        {{ form.servings.label }} {{ form.servings }}
+        {% for error in form.servings.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div>
+        {{ form.cook_time.label }} {{ form.cook_time }}
+        {% for error in form.cook_time.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div>
+        {{ form.instructions.label }} {{ form.instructions }}
+        {% for error in form.instructions.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <button type="submit">Add Recipe</button>
+</form>
+{% endblock %}
