@@ -36,16 +36,6 @@ class Recipe(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', lazy=True)
 
-class Products(db.Model):
-    __tablename__ = 'products'
-    id = db.Column(db.Integer, primary_key=True)
-    category = db.Column(db.String(100), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    energy = db.Column(db.Float, nullable=False)
-    protein = db.Column(db.Float, nullable=False)
-    carbohydrate = db.Column(db.Float, nullable=False)
-    fat = db.Column(db.Float, nullable=False)
-
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
