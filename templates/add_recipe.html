@@ -1,59 +1,110 @@
 {% extends "base.html" %}
 
-{% block title %}Recipe Added{% endblock %}
+{% block title %}Add recipe{% endblock %}
 
 {% block content %}
 <script>
     function addIngredient() {
-        var ingredientsDiv = document.getElementById('ingredientsDiv');
-        var newIngredientDiv = document.createElement('div');
-        newIngredientDiv.innerHTML = `
-            <input type="text" name="ingredients" placeholder="Ingredient">
+        let ingredients = document.getElementById('ingredients');
+        let newIngredient = document.createElement('div');
+        newIngredient.innerHTML = `
+            <!-- <input type="text" name="product" placeholder="Ingredient">
+            <input type="text" name="quantities" placeholder="Quantity"> -->
+            <select name="list_of_names">
+                {% for product in list_of_products %}
+                    <option value="{{ product }}">{{ product }}</option>
+                {% endfor %}
+            </select>
             <input type="text" name="quantities" placeholder="Quantity">
+            {% for error in form.quantities.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
         `;
-        ingredientsDiv.appendChild(newIngredientDiv);
+            
+        ingredients.appendChild(newIngredient);
     }
 </script>
-<h1>Add Recipe</h1>
 <form method="POST">
-    {{ form.hidden_tag() }}
-    <div>
-        {{ form.name.label }} {{ form.name }}
-        {% for error in form.name.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
-    </div>
-    <div id="ingredientsDiv">
+    <section id="top-recipe">
         <div>
-            {{ form.ingredients.label }} {{ form.ingredients }}
-            {{ form.quantities.label }} {{ form.quantities }}
+            <div>
+                <h2>{{ form.name.label }}</h2>
+                    {{ form.hidden_tag() }}
+                    <div>
+                        {{ form.name }}
+                        {% for error in form.name.errors %}
+                            <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                <h2>{{ form.description.label }}</h2>
+                <p>{{ form.description }}
+                    {% for error in form.description.errors %}
+                        <span style="color: red;">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            </div>
+            <div id="prep-content">   
+                <div>
+                    <h3>Preparation time</h3>
+                    <p>
+                        {{ form.prep_time }}
+                        {% for error in form.prep_time.errors %}
+                            <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </p>
+                </div>
+                <div class= "vertical"></div>
+                <div>
+                    <h3>Cook time</h3>
+                    <p>{{ form.cook_time }}
+                        {% for error in form.cook_time.errors %}
+                            <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </p>
+                </div>
+                <div class= "vertical"></div>
+                <div>
+                    <h3>Servings</h3>
+                    <p> {{ form.servings }}
+                        {% for error in form.servings.errors %}
+                            <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>    
         </div>
-    </div>
-    <button type="button" onclick="addIngredient()">Add Ingredient</button>
+    </section>
+    <section id="recipe">
+        <ul>
+            <h3>Ingredients</h3>
+            <div id="ingredients">
+                <select name= "list_of_names">
+                    {% for product in list_of_products %}
+                        <option value= "{{ product }}">{{product}}</option>"
+                    {% endfor %}
+                </select>
+                <input type="text" name="quantities" placeholder="Quantity">
+                {% for error in form.quantities.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addIngredient()">Add Ingredient</button>
+        </ul>
+    </section>
+    <section id="preparation">
+        <ol>
+            <h3>Instructions</h3>
+            <div>
+                {{ form.instructions }}
+                {% for error in form.instructions.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+        </ol>
+    </section>
     <div>
-        {{ form.description.label }} {{ form.description }}
-        {% for error in form.description.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
+        {{ form.submit }}
     </div>
-    <div>
-        {{ form.servings.label }} {{ form.servings }}
-        {% for error in form.servings.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
-    </div>
-    <div>
-        {{ form.cook_time.label }} {{ form.cook_time }}
-        {% for error in form.cook_time.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
-    </div>
-    <div>
-        {{ form.instructions.label }} {{ form.instructions }}
-        {% for error in form.instructions.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
-    </div>
-    <button type="submit">Add Recipe</button>
 </form>
 {% endblock %}
+
