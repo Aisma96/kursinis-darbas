@@ -84,9 +84,6 @@
                     {% endfor %}
                 </select>
                 <input type="text" name="quantities" placeholder="Quantity">
-                {% for error in form.quantities.errors %}
-                    <span style="color: red;">{{ error }}</span>
-                {% endfor %}
             </div>
             <button type="button" onclick="addIngredient()">Add Ingredient</button>
         </ul>
