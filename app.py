@@ -5,6 +5,8 @@ from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, BooleanField
 from wtforms.validators import DataRequired, Email, ValidationError
+import sqlite3
+
 
 
 app = Flask(__name__)
@@ -13,7 +15,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 db = SQLAlchemy(app)
 
 bcrypt = Bcrypt(app)
-
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -27,14 +28,25 @@ class Recipe(db.Model):
     __tablename__ = 'recipes'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    ingredients = db.Column(db.String(500), nullable=False)
-    quantities = db.Column(db.String(500), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    ingredients = db.Column(db.String, nullable=False)
+    quantities = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.Text(500), nullable=False)
+    prep_time = db.Column(db.Integer, nullable=False)
     servings = db.Column(db.Integer, nullable=False)
     cook_time = db.Column(db.Integer, nullable=False)
-    instructions = db.Column(db.Text, nullable=False)
+    instructions = db.Column(db.Text(1000), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', lazy=True)
+
+class Products(db.Model):
+    __tablename__ = 'products_nutritions'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    calories = db.Column(db.Float, nullable=False)
+    protein = db.Column(db.Float, nullable=False)
+    carbohydrates = db.Column(db.Float, nullable=False)
+    fat = db.Column(db.Float, nullable=False)
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -66,14 +78,17 @@ class RecipeForm(FlaskForm):
     ingredients = TextAreaField('Ingredients', validators=[DataRequired()])
     quantities = TextAreaField('Quantities', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[DataRequired()])
+    prep_time = IntegerField('Preparation time (minutes)', validators=[DataRequired()])
     servings = IntegerField('Servings', validators=[DataRequired()])
     cook_time = IntegerField('Cook Time (minutes)', validators=[DataRequired()])
     instructions = TextAreaField('Instructions', validators=[DataRequired()])
     submit = SubmitField('Add Recipe')
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 
 @app.route('/')
@@ -115,33 +130,41 @@ def login():
 @login_required
 def add_recipe():
     form = RecipeForm()
+    product_names= Products.query.all()
+    list_of_names = [item.name for item in product_names]
     if form.validate_on_submit():
-        ingredients = form.ingredients.data.split('\n')
-        quantities = form.quantities.data.split('\n')
+
         recipe = Recipe(
             name=form.name.data,
-            ingredients=', '.join(ingredients),
-            quantities=', '.join(quantities),
+            ingredients=form.ingredients.data,
+            quantities=form.quatities.data,
             description=form.description.data,
+            prep_time=form.prep_time.data,
             servings=form.servings.data,
             cook_time=form.cook_time.data,
-            instructions=form.instructions.data
+            instructions=form.instructions.data,
+            user = current_user
         )
         db.session.add(recipe)
         db.session.commit()
         return redirect(url_for('recipe_added'))
-    return render_template('add_recipe.html', form=form)
+    return render_template('add_recipe.html', form=form, list_of_products=list_of_names)
 
 @app.route('/recipeadded', methods=['GET', 'POST'])
 @login_required
 def recipe_added():
     return render_template('recipe_added.html')
 
+@app.route('/myrecipes', methods=['GET'])
+@login_required
+def my_recipes():
+    my_recipes = Recipe.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_recipes.html', my_recipes=my_recipes)
+
 
 @app.route('/blueberry')
 def blueberry():
     return render_template('blueberry_donuts.html')
-
 
 
 @app.route('/logout')
