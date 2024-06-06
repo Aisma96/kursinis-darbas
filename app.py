@@ -158,7 +158,7 @@ def add_recipe():
                         if product:
                             calories = product.calories.replace(',', '.')
                             protein = product.protein.replace(',', '.')
-                            carbohydrate = product.carbohydrate.replace(',', '.')
+                            carbohydrate = product.carbohydrates.replace(',', '.')
                             fat = product.fat.replace(',', '.')
                             
                             total_nutrition['Calories'] += calories * quantities / 100
