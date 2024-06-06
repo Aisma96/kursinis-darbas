@@ -3,8 +3,8 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-    <h1>Register</h1>
-    <form method="post">
+    <h1 class="register-main-element">Register</h1>
+    <form method="post" id="register">
         {{ form.csrf_token }}
         {{ form.username.label }} {{ form.username }}
         {{ form.email.label }} {{ form.email }}

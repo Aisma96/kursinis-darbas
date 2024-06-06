@@ -166,8 +166,15 @@ def add_recipe():
                             total_nutrition['Carbohydrate'] += carbohydrate * quantities / 100
                             total_nutrition['Fat'] += fat * quantities / 100
                         ingredients.append({'product': product, 'quantity': quantity})
-                    except ValueError
+                    except ValueError:
                         flash("Please enter a valid quantity for all ingredients.")
+                        return render_template(
+                            'add_recipe.html',
+                            form=form,
+                            list_of_products=list_of_names,
+                            ingredients=ingredients,
+                            total_nutrition=total_nutrition
+                        )
 
     if form.validate_on_submit():
         recipe = Recipe(
@@ -189,7 +196,6 @@ def add_recipe():
             )
             db.session.add(recipe_ingredient)
         db.session.commit()
-        print("Ingredients added to database successfully")
 
         return redirect(url_for('view_recipe', recipe_id=recipe.id))
     return render_template('add_recipe.html', form=form, list_of_products=list_of_names,ingredients=ingredients,
@@ -261,4 +267,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-
