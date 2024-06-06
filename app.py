@@ -28,15 +28,21 @@ class Recipe(db.Model):
     __tablename__ = 'recipes'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    ingredients = db.Column(db.String, nullable=False)
-    quantities = db.Column(db.Integer, nullable=False)
     description = db.Column(db.Text(500), nullable=False)
     prep_time = db.Column(db.Integer, nullable=False)
     servings = db.Column(db.Integer, nullable=False)
     cook_time = db.Column(db.Integer, nullable=False)
     instructions = db.Column(db.Text(1000), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', lazy=True)
+    user = db.relationship('User',backref='recipes', lazy=True)
+
+class RecipeIngredients(db.Model):
+    __tablename__ = 'ingredients'
+    id = db.Column(db.Integer, primary_key=True)
+    ingredients = db.Column(db.String, nullable=False)
+    quantities = db.Column(db.Integer, nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'))
+    recipe = db.relationship('Recipe', backref='ingredients', lazy=True)
 
 class Products(db.Model):
     __tablename__ = 'products_nutritions'
@@ -75,8 +81,6 @@ class LoginForm(FlaskForm):
 
 class RecipeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
-    ingredients = TextAreaField('Ingredients', validators=[DataRequired()])
-    quantities = TextAreaField('Quantities', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[DataRequired()])
     prep_time = IntegerField('Preparation time (minutes)', validators=[DataRequired()])
     servings = IntegerField('Servings', validators=[DataRequired()])
@@ -88,7 +92,6 @@ class RecipeForm(FlaskForm):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 
 
 @app.route('/')
@@ -131,13 +134,54 @@ def login():
 def add_recipe():
     form = RecipeForm()
     product_names= Products.query.all()
-    list_of_names = [item.name for item in product_names]
-    if form.validate_on_submit():
+    list_of_names = [item.name for item in product_names]   
+    ingredients = []
+    total_nutrition = {
+        'Calories': 0,
+        'Protein': 0,
+        'Carbohydrate': 0,
+        'Fat': 0
+    }
+    if request.method == 'POST':
+        print("Form POST request received")
+        for x in range(50):
+            product_key = f'list_of_products_{x}'
+            quantity_key = f'quantities_{x}'
 
+            if product_key in request.form and quantity_key in request.form:
+                product = request.form[product_key]
+                quantity = request.form[quantity_key]
+
+                if product and quantity:
+                    try:
+                        quantities = quantity.replace(',', '.')
+                        product = Products.query.filter_by(name=product).first()
+                        if product:
+                            calories = product.calories.replace(',', '.')
+                            protein = product.protein.replace(',', '.')
+                            carbohydrate = product.carbohydrate.replace(',', '.')
+                            fat = product.fat.replace(',', '.')
+                            
+                            total_nutrition['Calories'] += calories * quantities / 100
+                            total_nutrition['Protein'] += protein * quantities / 100
+                            total_nutrition['Carbohydrate'] += carbohydrate * quantities / 100
+                            total_nutrition['Fat'] += fat * quantities / 100
+                        ingredients.append({'product': product, 'quantity': quantity})
+                    except ValueError as e:
+                        print(f"ValueError: {e}")
+                        flash("Please enter a valid quantity for all ingredients.")
+                        return render_template(
+                            'add_recipe.html',
+                            form=form,
+                            list_of_products=list_of_names,
+                            ingredients=ingredients,
+                            total_nutrition=total_nutrition
+                        )
+
+    if form.validate_on_submit():
+        print("Form validated successfully")
         recipe = Recipe(
             name=form.name.data,
-            ingredients=form.ingredients.data,
-            quantities=form.quatities.data,
             description=form.description.data,
             prep_time=form.prep_time.data,
             servings=form.servings.data,
@@ -146,25 +190,82 @@ def add_recipe():
             user = current_user
         )
         db.session.add(recipe)
-        db.session.commit()
-        return redirect(url_for('recipe_added'))
-    return render_template('add_recipe.html', form=form, list_of_products=list_of_names)
+        try:
+            db.session.commit()
+            print("Recipe added to database successfully")
+            for ingredient in ingredients:
+                recipe_ingredient = RecipeIngredients(
+                ingredients=ingredient['product'],
+                quantities=ingredient['quantity'],
+                recipe_id=recipe.id
+                )
+                db.session.add(recipe_ingredient)
+            db.session.commit()
+            print("Ingredients added to database successfully")
+
+            return redirect(url_for('view_recipe', recipe_id=recipe.id))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Exception: {e}")
+            flash("An error occurred while adding the recipe. Please try again.")
+    print("Rendering add_recipe.html template")
+    return render_template('add_recipe.html', form=form, list_of_products=list_of_names,ingredients=ingredients,
+                           total_nutrition=total_nutrition)
 
 @app.route('/recipeadded', methods=['GET', 'POST'])
 @login_required
 def recipe_added():
     return render_template('recipe_added.html')
 
-@app.route('/myrecipes', methods=['GET'])
+
+@app.route('/recipes/<int:recipe_id>', methods=['GET'])
+@login_required
+def view_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    ingredients = RecipeIngredients.query.filter_by(recipe_id=recipe_id).all()
+    return render_template('view_recipe.html', recipe=recipe, ingredients=ingredients)
+
+@app.route('/my_recipes', methods=['GET'])
 @login_required
 def my_recipes():
-    my_recipes = Recipe.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_recipes.html', my_recipes=my_recipes)
+    recipes = Recipe.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_recipes.html', recipes=recipes)
+
+
+# @app.route('/allrecipes', methods=['GET'])
+# @login_required
+# def all_recipes():
+#     all_recipes = Recipe.query.filter_by(user_id=User.id)
+#     all_ingredients = RecipeIngredients.query.filter_by(user_id=Recipe.id)
+#     return render_template('my_recipes.html', all_recipes=all_recipes, all_ingredients=all_ingredients)
 
 
 @app.route('/blueberry')
 def blueberry():
-    return render_template('blueberry_donuts.html')
+    return render_template('blueberry-donuts.html')
+
+@app.route('/pudding')
+def pudding():
+    return render_template('chia-pudding.html')
+
+@app.route('/overnigntoats')
+def overnignt_oats():
+    return render_template('overnignt-oats.html')
+
+@app.route('/pancakes')
+def pancakes():
+    return render_template('cottage-cancakes.html')
+
+
+@app.route('/unfinishedrecipes')
+def unfinished_recipes():
+    return render_template('unfinished-recipes.html')
+
+@app.route('/editrecipe')
+def edit_recipe():
+    return render_template('edit_recipe.html')
+
+
 
 
 @app.route('/logout')
@@ -177,3 +278,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
