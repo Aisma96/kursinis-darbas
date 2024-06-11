@@ -153,28 +153,21 @@ def add_recipe():
 
                 if product and quantity:
                     try:
-                        quantities = quantity.replace(',', '.')
-                        product = Products.query.filter_by(name=product).first()
-                        if product:
-                            calories = product.calories.replace(',', '.')
-                            protein = product.protein.replace(',', '.')
-                            carbohydrate = product.carbohydrates.replace(',', '.')
-                            fat = product.fat.replace(',', '.')
-                            
-                            total_nutrition['Calories'] += calories * quantities / 100
-                            total_nutrition['Protein'] += protein * quantities / 100
-                            total_nutrition['Carbohydrate'] += carbohydrate * quantities / 100
-                            total_nutrition['Fat'] += fat * quantities / 100
+                        quantities = float(quantity)
+                    product = Products.query.filter_by(name=product).first()
+                    if product:
+                        calories = float(product.calories)
+                        protein = float(product.protein)
+                        carbohydrate = float(product.carbohydrates)
+                        fat = float(product.fat)
+                        
+                        total_nutrition['Calories'] += calories * quantities / 100
+                        total_nutrition['Protein'] += protein * quantities / 100
+                        total_nutrition['Carbohydrate'] += carbohydrate * quantities / 100
+                        total_nutrition['Fat'] += fat * quantities / 100
                         ingredients.append({'product': product, 'quantity': quantity})
                     except ValueError:
                         flash("Please enter a valid quantity for all ingredients.")
-                        return render_template(
-                            'add_recipe.html',
-                            form=form,
-                            list_of_products=list_of_names,
-                            ingredients=ingredients,
-                            total_nutrition=total_nutrition
-                        )
 
     if form.validate_on_submit():
         recipe = Recipe(
